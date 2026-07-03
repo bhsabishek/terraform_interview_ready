@@ -60,3 +60,15 @@ module "application_server" {
   environment          = var.env
   key_name            = null
 }
+
+module "alb" {
+  source = "../../modules/alb"
+
+  name                     = var.alb_name
+  internal                 = var.alb_internal
+  security_groups          = [module.application_sg.id]
+  subnets                  = module.vpc.public_subnet_ids
+  enable_deletion_protection = var.alb_enable_deletion_protection
+  vpc_id                   = module.vpc.vpc_id
+  target_id                = module.application_server.instance_id
+}
