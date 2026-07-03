@@ -28,36 +28,68 @@ variable "private_subnets" {
   type = list(string)
 }
 
-variable "sg_name" {
+variable "bastion_sg_name" {
   description = "Name of the Security Group"
   type        = string
 }
 
-variable "description" {
+variable "bastion_sg_description" {
   description = "Description of the Security Group"
   type        = string
 }
 
-variable ingress_rules {
-    description = "The ingress rules for the security group"
-    type        = list(object({
-        description = string
-        from_port   = number
-        to_port     = number
-        protocol    = string
-        cidr_blocks = list(string)
-    }))
+variable "bastion_sg_ingress_rules" {
+  description = "The ingress rules for the security group"
+  type        = list(object({
+    description = string
+    from_port   = number
+    to_port     = number
+    protocol    = string
+    cidr_blocks = list(string)
+  }))
 }
 
-variable egress_rules {
-    description = "The egress rules for the security group"
-    type        = list(object({
-        description = string
-        from_port   = number
-        to_port     = number
-        protocol    = string
-        cidr_blocks = list(string)
-    }))
+variable "bastion_sg_egress_rules" {
+  description = "The egress rules for the security group"
+  type        = list(object({
+    description = string
+    from_port   = number
+    to_port     = number
+    protocol    = string
+    cidr_blocks = list(string)
+  }))
+}
+
+variable "application_sg_name" {
+  description = "Name of the Security Group"
+  type        = string
+}
+
+variable "application_sg_description" {
+  description = "Description of the Security Group"
+  type        = string
+}
+
+variable "application_sg_ingress_rules" {
+  description = "The ingress rules for the security group"
+  type        = list(object({
+    description = string
+    from_port   = number
+    to_port     = number
+    protocol    = string
+    cidr_blocks = list(string)
+  }))
+}
+
+variable "application_sg_egress_rules" {
+  description = "The egress rules for the security group"
+  type        = list(object({
+    description = string
+    from_port   = number
+    to_port     = number
+    protocol    = string
+    cidr_blocks = list(string)
+  }))
 }
 
 variable "ami_id" {
@@ -80,12 +112,27 @@ variable "security_group_ids" {
   type        = list(string)
 }
 
-variable "associate_public_ip" {
-  description = "Whether to associate a public IP address with the EC2 instance"
+variable "application_associate_public_ip" {
+  description = "Whether to associate a public IP address with the application EC2 instance"
   type        = bool
 }
 
-variable "instance_name" {
-  description = "The name for the EC2 instance"
+variable "application_instance_name" {
+  description = "The name for the application EC2 instance"
+  type        = string
+}
+
+variable "bastion_instance_name" {
+  description = "The name for the baston EC2 instance"
+  type        = string
+}
+
+variable "bastion_associate_public_ip" {
+  description = "Whether to associate a public IP address with the bastion EC2 instance"
+  type        = bool
+}
+
+variable "key_name" {
+  description = "The name of the key pair to use for the EC2 instance"
   type        = string
 }

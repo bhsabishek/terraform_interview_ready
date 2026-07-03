@@ -1,7 +1,7 @@
 output "name" {
-    value = aws_security_group.my-SG.name
+    value = aws_security_group.this.name
 }
 
 output "id" {
-    value = aws_security_group.my-SG.id
+    value = aws_security_group.this.id
 }
