@@ -32,8 +32,10 @@ resource "aws_alb_listener" "this" {
     }
 }
 
+/*
 resource "aws_alb_target_group_attachment" "this" {
     target_group_arn = aws_alb_target_group.this.arn
     target_id        = var.target_id
     port             = 80
 }
+*/

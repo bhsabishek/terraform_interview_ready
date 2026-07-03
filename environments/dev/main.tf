@@ -33,6 +33,7 @@ module "application_sg" {
   egress_rules  = var.application_sg_egress_rules
 }
 
+
 module "bastion_server" {
   source = "../../modules/ec2"
 
@@ -44,9 +45,10 @@ module "bastion_server" {
   instance_name        = var.bastion_instance_name
   project_name         = var.proj_name
   environment          = var.env
-  key_name            = var.key_name
+  key_name             = var.key_name
 }
 
+/*
 module "application_server" {
   source = "../../modules/ec2"
 
@@ -60,6 +62,7 @@ module "application_server" {
   environment          = var.env
   key_name            = null
 }
+*/
 
 module "alb" {
   source = "../../modules/alb"
@@ -70,5 +73,19 @@ module "alb" {
   subnets                  = module.vpc.public_subnet_ids
   enable_deletion_protection = var.alb_enable_deletion_protection
   vpc_id                   = module.vpc.vpc_id
-  target_id                = module.application_server.instance_id
+  //target_id                = module.asg.target_group_arn
+}
+
+module "asg" {
+  source = "../../modules/asg"
+
+  ami_id               = var.ami_id
+  instance_type        = var.instance_type
+  security_group_ids   = [module.application_sg.id]
+  key_name             = var.key_name
+  environment          = var.env
+  instance_name        = var.asg_instance_name
+  subnet_ids            = module.vpc.private_subnet_ids
+  alb_target_group_arn = module.alb.target_group_arn
+  lt_name_prefix       = "${var.proj_name}-${var.env}-lt"
 }

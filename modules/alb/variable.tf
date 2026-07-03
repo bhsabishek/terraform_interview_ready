@@ -30,7 +30,9 @@ variable "vpc_id" {
   type        = string
 }
 
+/*
 variable "target_id" {
   description = "The ID of the target (EC2 instance) to attach to the ALB target group"
   type        = string
 }
+*/

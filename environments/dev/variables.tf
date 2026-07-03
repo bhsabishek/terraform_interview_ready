@@ -102,6 +102,7 @@ variable "instance_type" {
   type        = string
 }
 
+/*
 variable "application_associate_public_ip" {
   description = "Whether to associate a public IP address with the application EC2 instance"
   type        = bool
@@ -111,6 +112,7 @@ variable "application_instance_name" {
   description = "The name for the application EC2 instance"
   type        = string
 }
+*/
 
 variable "bastion_instance_name" {
   description = "The name for the baston EC2 instance"
@@ -142,4 +144,9 @@ variable "alb_enable_deletion_protection" {
   description = "Boolean to enable deletion protection for the ALB"
   type        = bool
   default     = false
+}
+
+variable "asg_instance_name" {
+  description = "The name for the EC2 instances in the Auto Scaling Group"
+  type        = string
 }

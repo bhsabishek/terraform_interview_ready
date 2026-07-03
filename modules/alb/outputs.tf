@@ -30,6 +30,8 @@ output "security_groups" {
   value = aws_alb.this.security_groups
 }
 
+/*
 output "target_group_attachment_id" {
   value = aws_alb_target_group_attachment.this.id
 }
+*/
