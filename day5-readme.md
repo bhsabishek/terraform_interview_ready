@@ -1,70 +1,111 @@
-Day 4 — Level 1
-Project: Customer Portal Infrastructure
+Day 5 — Level 1
+Project: Customer Portal Platform
+Today's Topic: Reusable EC2 Module + Bastion Host + Private Application Server
+
 Difficulty: ⭐ Level 1/10
-Estimated Time: 2–3 Hours
 
-Business Scenario
-The networking team has completed the VPC, public subnets, private subnets, Internet Gateway, NAT Gateway, and route tables.
-Now the Security Team has issued a mandatory requirement:
+Estimated Time: 3–4 Hours
 
-No EC2 instance should ever be launched without approved Security Groups.
-Your responsibility is to build a reusable Security Group module that every future EC2, ALB, RDS, and EKS deployment will use.
-Objective
-Create a new reusable module:
+Real-World Scenario
+The networking team has completed:
+✅ VPC
+✅ Public & Private Subnets
+✅ Internet Gateway
+✅ NAT Gateway
+✅ Route Tables
+✅ Security Group Module
+Now the application team needs compute infrastructure.
+Company policy states:
+
+Production application servers must never be deployed in public subnets.
+Only a Bastion Host is allowed in a public subnet for administrative access.
+Existing Infrastructure
+From previous challenges, you already have:
+terraform-enterprise-platform/
+
 modules/
-    security-group/
-This is your second reusable module after the VPC module.
+├── vpc/
+└── security-group/
+
+environments/
+└── dev/
+Today's Goal
+Create your third reusable module:
+modules/
+    ec2/
+Using this single module, deploy:
+Bastion Host (Public)
+Application Server (Private)
+Architecture
+                    Internet
+                        |
+                  Internet Gateway
+                        |
+                Public Subnet
+                        |
+                  Bastion Host
+                        |
+                     SSH Only
+                        |
+               -----------------
+               |               |
+         Private Subnet   Private Subnet
+               |
+         Application EC2
 Functional Requirements
-Requirement 1
-Create a reusable Security Group module.
-Module files:
+Step 1
+Create a reusable EC2 module.
+Files:
 
 main.tf
+
 variables.tf
+
 outputs.tf
+
 versions.tf
-Requirement 2
-The module must accept:
+Step 2
+The module must support creating any EC2 instance, not just today's servers.
+Inputs should include:
+
+ami_id
+
+instance_type
+
+subnet_id
+
+security_group_ids
+
+associate_public_ip
+
+instance_name
+
 project_name
 
 environment
+Step 3
+Deploy:
+Bastion Host
+Requirements:
+Public subnet
+Public IP enabled
+Bastion Security Group
+Instance Type:
+t3.micro
+Step 4
+Deploy:
+Application Server
+Requirements:
+Private subnet
+No public IP
+Application Security Group
+Instance Type:
+t3.micro
+Step 5
+Do not duplicate code.
+Instantiate the EC2 module twice from the environment layer.
 
-vpc_id
-
-name
-
-description
-
-ingress_rules
-
-egress_rules
-Design it so the same module can create different Security Groups later without modifying the module.
-Requirement 3
-Create one Security Group for the application servers.
-Name:
-
-customer-portal-dev-app-sg
-Requirement 4
-Allow inbound traffic:
-Port	Protocol	Source
-22	TCP	Your office CIDR (example: 203.0.113.0/24)
-80	TCP	VPC CIDR
-443	TCP	VPC CIDR
-Do not allow 0.0.0.0/0 for SSH.
-Requirement 5
-Allow outbound traffic:
-All traffic
-
-0.0.0.0/0
-Requirement 6
-Use dynamic blocks for ingress and egress rules.
-Do not create multiple ingress {} blocks manually.
-
-Requirement 7
-Use the VPC ID created by your VPC module.
-Do not hardcode it.
-
-Requirement 8
+Step 6
 Apply standard tags:
 Project
 
@@ -73,25 +114,38 @@ Environment
 ManagedBy = Terraform
 
 Name
-Requirement 9
-Output:
-security_group_id
+Examples:
+customer-portal-dev-bastion
 
-security_group_arn
+customer-portal-dev-app-01
+Step 7
+Outputs
+The module should return:
 
-security_group_name
+Instance ID
+
+Private IP
+
+Public IP
+
+Availability Zone
+
+ARN
+Remember that the Application Server won't have a public IP.
 Constraints
-❌ No hardcoded VPC ID.
-❌ No hardcoded Security Group IDs.
-❌ No inline duplicate ingress blocks.
-❌ No provider block inside the module.
-❌ No default values for environment-specific variables.
+❌ Do not hardcode AMI IDs inside the module.
+❌ Do not hardcode subnet IDs.
+❌ Do not create separate modules for Bastion and App.
+❌ Do not duplicate EC2 resource blocks.
+❌ Do not configure providers inside the module.
+❌ Do not use default values for environment-specific settings.
 Expected Folder Structure
 terraform-enterprise-platform/
 
 modules/
 ├── vpc/
-└── security-group/
+├── security-group/
+└── ec2/
     ├── main.tf
     ├── variables.tf
     ├── outputs.tf
@@ -103,57 +157,56 @@ environments/
     ├── provider.tf
     ├── terraform.tfvars
     └── versions.tf
-Commands to Run
+Validation
+Run:
 terraform fmt
 
 terraform validate
 
 terraform plan
-If you have an AWS account available:
+If you're using AWS, also run:
 terraform apply
-Verify in AWS that:
-The Security Group is attached to the correct VPC.
-The ingress rules match the requirements.
-SSH is not open to the world.
+Verify:
+Bastion Host has a public IP.
+Application Server has no public IP.
+Both instances are in the expected subnets.
+Tags are applied correctly.
 Deliverables
-Send me:
+Submit:
 Updated folder structure.
-Contents of every new or modified .tf file.
+Every new and modified .tf file.
 Output of:
 terraform fmt
 terraform validate
 terraform plan
-If you applied the configuration, include the Security Group ID and a screenshot (or output) showing the rules.
-What You'll Learn Today
+If applied:
+EC2 Instance IDs
+Public/Private IPs
+AWS console screenshot (optional)
+Concepts You'll Learn Today
 After completing this challenge, you'll understand:
-Why reusable Security Group modules are important.
-How to use dynamic blocks for flexible rule creation.
-How modules consume outputs from other modules.
-How to design Terraform modules that scale across multiple environments.
-Senior Code Review Checklist
-When you submit your solution, I'll review it as if it were a real pull request, checking for:
+How to design a reusable EC2 module.
+Why infrastructure should be composed by instantiating modules, not copying resources.
+The difference between Bastion Hosts and private application servers.
+How networking decisions affect EC2 accessibility.
+Senior Code Review Focus
+When you submit your code, I'll review it like a real pull request and evaluate:
 Module reusability
-Correct use of dynamic blocks
-Variable design
-Security best practices
-Naming conventions
-Tagging consistency
+Variable naming
+Output quality
+Terraform best practices
+AWS networking correctness
+Code organization
 Production readiness
-Interview-quality Terraform coding
-Progress So Far
+Interview readiness
+Bootcamp Progress
 ✅ Day 1: Reusable VPC Module
 ✅ Day 2: Public & Private Subnets (for_each)
-✅ Day 3: Internet Gateway + Route Tables + NAT Gateway
-✅ Day 4: Reusable Security Group Module (today)
-By the end of Level 1, you'll have a fully functional AWS networking foundation that we'll build upon in the higher levels.
+✅ Day 3: Internet Gateway + NAT Gateway + Route Tables
+✅ Day 4: Reusable Security Group Module
+✅ Day 5: Reusable EC2 Module (Bastion + Private Application Server)
+By the end of Level 1, you'll have built a complete, modular AWS foundation that we can confidently extend into ALBs, Auto Scaling, RDS, HCP Terraform, Kubernetes, and eventually the senior-level platform engineering scenarios you're aiming for.
 
 Daily Terraform Interview Challenge
-I'm intentionally not following this prompt anymore because we've replaced it with a better learning strategy.
-Your saved preference is:
-
-Build one enterprise Terraform project
-Start from Level 1
-Progress gradually to Level 10
-Every challenge builds on the previous one
-By Level 10, you'll naturally reach the 6+ years DevOps engineer level
-So I won't jump back to senior-level challenges from Day 5 onward, even if this old prompt is pasted.
+I won't use this old prompt because we've intentionally replaced it with your new learning plan.
+Your saved preference is to progress from Level 1 to Level 10 through one continuous enterprise Terraform project. So instead of a 6+ years challenge today, here's the next challenge in your bootcamp.

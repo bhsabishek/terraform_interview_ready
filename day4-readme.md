@@ -1,92 +1,71 @@
-🚀 Terraform Bootcamp
-Day 3 — Level 1
-Topic: Internet Gateway + Route Tables + Public Internet Access
+Day 4 — Level 1
+Project: Customer Portal Infrastructure
+Difficulty: ⭐ Level 1/10
 Estimated Time: 2–3 Hours
-Real-World Scenario
-The networking team has reviewed your VPC implementation.
-Application teams now want to deploy an Application Load Balancer (ALB) in the public subnet.
-However, your public subnets currently cannot access the Internet because there is:
-❌ No Internet Gateway
-❌ No Route Table
-❌ No Route Table Association
-Your task is to make only the public subnets internet accessible, while keeping private subnets isolated.
-Existing Infrastructure
-From previous days, you already have:
-terraform-enterprise-platform/
 
+Business Scenario
+The networking team has completed the VPC, public subnets, private subnets, Internet Gateway, NAT Gateway, and route tables.
+Now the Security Team has issued a mandatory requirement:
+
+No EC2 instance should ever be launched without approved Security Groups.
+Your responsibility is to build a reusable Security Group module that every future EC2, ALB, RDS, and EKS deployment will use.
+Objective
+Create a new reusable module:
 modules/
-    vpc/
+    security-group/
+This is your second reusable module after the VPC module.
+Functional Requirements
+Requirement 1
+Create a reusable Security Group module.
+Module files:
 
-environments/
-    dev/
+main.tf
+variables.tf
+outputs.tf
+versions.tf
+Requirement 2
+The module must accept:
+project_name
 
-VPC
-Public Subnets
-Private Subnets
-Today's Goal
-Extend the existing VPC module.
-Create:
-Internet Gateway
+environment
 
-↓
+vpc_id
 
-Public Route Table
+name
 
-↓
+description
 
-Default Route (0.0.0.0/0)
+ingress_rules
 
-↓
+egress_rules
+Design it so the same module can create different Security Groups later without modifying the module.
+Requirement 3
+Create one Security Group for the application servers.
+Name:
 
-Associate ONLY Public Subnets
-Architecture
-                 Internet
-
-                     |
-
-            Internet Gateway
-
-                     |
-
-              Public Route Table
-                     |
-        ----------------------------
-        |                          |
- Public Subnet A            Public Subnet B
-
------------------------------------------------
-
- Private Subnet A   (No Internet)
-
- Private Subnet B   (No Internet)
-Requirements
-Step 1
-Inside your VPC module, create:
-Internet Gateway
-It should be attached to the VPC created by your module.
-Step 2
-Create a Public Route Table.
-It should contain:
-Destination
+customer-portal-dev-app-sg
+Requirement 4
+Allow inbound traffic:
+Port	Protocol	Source
+22	TCP	Your office CIDR (example: 203.0.113.0/24)
+80	TCP	VPC CIDR
+443	TCP	VPC CIDR
+Do not allow 0.0.0.0/0 for SSH.
+Requirement 5
+Allow outbound traffic:
+All traffic
 
 0.0.0.0/0
+Requirement 6
+Use dynamic blocks for ingress and egress rules.
+Do not create multiple ingress {} blocks manually.
 
-↓
+Requirement 7
+Use the VPC ID created by your VPC module.
+Do not hardcode it.
 
-Target
-
-Internet Gateway
-Step 3
-Associate only the public subnets with this route table.
-Use for_each.
-Do not create two separate association resources.
-Step 4
-Private subnets should not be associated with this route table.
-They should remain isolated.
-(No NAT Gateway yet—we'll add that later.)
-Step 5
-Tag all resources.
-Internet Gateway
+Requirement 8
+Apply standard tags:
 Project
 
 Environment
@@ -94,32 +73,25 @@ Environment
 ManagedBy = Terraform
 
 Name
-Example:
-customer-portal-dev-igw
-Route Table
-customer-portal-dev-public-rt
-Variables
-Do not introduce unnecessary variables today.
-Reuse the variables you already created:
-project_name
-environment
-Outputs
-Add:
-internet_gateway_id
+Requirement 9
+Output:
+security_group_id
 
-public_route_table_id
+security_group_arn
+
+security_group_name
 Constraints
-❌ Do not modify your environment structure.
-❌ Do not create another module.
-❌ Do not hardcode VPC IDs.
-❌ Do not duplicate route table association resources.
-❌ Do not create a NAT Gateway.
-❌ Do not create private route tables yet.
+❌ No hardcoded VPC ID.
+❌ No hardcoded Security Group IDs.
+❌ No inline duplicate ingress blocks.
+❌ No provider block inside the module.
+❌ No default values for environment-specific variables.
 Expected Folder Structure
 terraform-enterprise-platform/
 
 modules/
-└── vpc/
+├── vpc/
+└── security-group/
     ├── main.tf
     ├── variables.tf
     ├── outputs.tf
@@ -131,32 +103,57 @@ environments/
     ├── provider.tf
     ├── terraform.tfvars
     └── versions.tf
-No new folders today.
 Commands to Run
 terraform fmt
+
 terraform validate
+
 terraform plan
-Do not run terraform apply yet. During the bootcamp, we'll treat terraform plan as our quality gate unless a later challenge explicitly requires deployment.
+If you have an AWS account available:
+terraform apply
+Verify in AWS that:
+The Security Group is attached to the correct VPC.
+The ingress rules match the requirements.
+SSH is not open to the world.
 Deliverables
-When you're done, send me:
-The updated folder structure.
-The contents of every modified .tf file.
-The output of:
+Send me:
+Updated folder structure.
+Contents of every new or modified .tf file.
+Output of:
 terraform fmt
 terraform validate
 terraform plan
-🎯 What You'll Learn Today
+If you applied the configuration, include the Security Group ID and a screenshot (or output) showing the rules.
+What You'll Learn Today
 After completing this challenge, you'll understand:
-Why an Internet Gateway is required
-How route tables control network traffic
-The difference between a VPC and a route table
-Why only public subnets receive a default internet route
-How to use for_each for scalable route table associations
-How AWS determines whether a subnet is "public" or "private"
-👨‍💻 Senior Engineer Tips
-While implementing, think about these questions:
-Why does attaching an Internet Gateway not automatically make a subnet public?
-What exactly makes a subnet "public" in AWS?
-If you accidentally associate a private subnet with the public route table, what happens?
-Why are route table associations often implemented with for_each instead of individual resources?
-This challenge intentionally introduces one new AWS networking concept at a time. Tomorrow (Day 4), we'll continue by creating Elastic IPs, NAT Gateway, and Private Route Tables, completing a production-ready network foundation before we move on to security groups and compute resources.
+Why reusable Security Group modules are important.
+How to use dynamic blocks for flexible rule creation.
+How modules consume outputs from other modules.
+How to design Terraform modules that scale across multiple environments.
+Senior Code Review Checklist
+When you submit your solution, I'll review it as if it were a real pull request, checking for:
+Module reusability
+Correct use of dynamic blocks
+Variable design
+Security best practices
+Naming conventions
+Tagging consistency
+Production readiness
+Interview-quality Terraform coding
+Progress So Far
+✅ Day 1: Reusable VPC Module
+✅ Day 2: Public & Private Subnets (for_each)
+✅ Day 3: Internet Gateway + Route Tables + NAT Gateway
+✅ Day 4: Reusable Security Group Module (today)
+By the end of Level 1, you'll have a fully functional AWS networking foundation that we'll build upon in the higher levels.
+
+Daily Terraform Interview Challenge
+I'm intentionally not following this prompt anymore because we've replaced it with a better learning strategy.
+Your saved preference is:
+
+Build one enterprise Terraform project
+Start from Level 1
+Progress gradually to Level 10
+Every challenge builds on the previous one
+By Level 10, you'll naturally reach the 6+ years DevOps engineer level
+So I won't jump back to senior-level challenges from Day 5 onward, even if this old prompt is pasted.

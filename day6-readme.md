@@ -1,61 +1,42 @@
-Day 5 — Level 1
+Day 6 — Level 1
 Project: Customer Portal Platform
-Today's Topic: Reusable EC2 Module + Bastion Host + Private Application Server
-
+Today's Topic: Application Load Balancer (ALB) Module + Target Group
 Difficulty: ⭐ Level 1/10
-
 Estimated Time: 3–4 Hours
-
 Real-World Scenario
-The networking team has completed:
+Your infrastructure currently consists of:
 ✅ VPC
 ✅ Public & Private Subnets
 ✅ Internet Gateway
 ✅ NAT Gateway
 ✅ Route Tables
 ✅ Security Group Module
-Now the application team needs compute infrastructure.
-Company policy states:
+✅ EC2 Module (Bastion + Application Server)
+The application team has deployed the first version of the Customer Portal. Users should never access the application EC2 instances directly. Instead, all HTTP traffic must flow through an Application Load Balancer (ALB).
+Your task is to create a reusable ALB module.
+Existing Architecture
+Internet
 
-Production application servers must never be deployed in public subnets.
-Only a Bastion Host is allowed in a public subnet for administrative access.
-Existing Infrastructure
-From previous challenges, you already have:
-terraform-enterprise-platform/
+   |
 
+Application Load Balancer
+
+   |
+
+Target Group
+
+   |
+
+Application EC2 (Private Subnet)
+Objective
+Create a reusable module:
 modules/
-├── vpc/
-└── security-group/
-
-environments/
-└── dev/
-Today's Goal
-Create your third reusable module:
-modules/
-    ec2/
-Using this single module, deploy:
-Bastion Host (Public)
-Application Server (Private)
-Architecture
-                    Internet
-                        |
-                  Internet Gateway
-                        |
-                Public Subnet
-                        |
-                  Bastion Host
-                        |
-                     SSH Only
-                        |
-               -----------------
-               |               |
-         Private Subnet   Private Subnet
-               |
-         Application EC2
+    alb/
+This module should be reusable for future applications without code changes.
 Functional Requirements
 Step 1
-Create a reusable EC2 module.
-Files:
+Create the module structure.
+modules/alb/
 
 main.tf
 
@@ -65,87 +46,94 @@ outputs.tf
 
 versions.tf
 Step 2
-The module must support creating any EC2 instance, not just today's servers.
-Inputs should include:
+The module must create:
+One Application Load Balancer
+One Target Group
+One HTTP Listener (Port 80)
+Do not configure HTTPS yet.
+Step 3
+The ALB must:
+Be internet-facing
+Be deployed across both public subnets
+Use the ALB Security Group
+Support deletion protection through a variable
+Step 4
+Create a Target Group.
+Requirements:
+Protocol: HTTP
+Port: 80
+Target Type: Instance
+Health Check Path:
+/
+Health Check Settings:
+Healthy Threshold: 3
 
-ami_id
+Unhealthy Threshold: 3
 
-instance_type
+Interval: 30 seconds
+Step 5
+Create a Listener.
+Port 80
 
-subnet_id
+↓
 
-security_group_ids
+Forward
 
-associate_public_ip
+↓
 
-instance_name
-
+Target Group
+Step 6
+Register your existing Application EC2 instance with the Target Group.
+Do this using Terraform.
+Step 7
+Variables
+Your module should accept:
 project_name
 
 environment
-Step 3
-Deploy:
-Bastion Host
-Requirements:
-Public subnet
-Public IP enabled
-Bastion Security Group
-Instance Type:
-t3.micro
-Step 4
-Deploy:
-Application Server
-Requirements:
-Private subnet
-No public IP
-Application Security Group
-Instance Type:
-t3.micro
-Step 5
-Do not duplicate code.
-Instantiate the EC2 module twice from the environment layer.
 
-Step 6
-Apply standard tags:
-Project
+vpc_id
 
-Environment
+public_subnet_ids
 
-ManagedBy = Terraform
+security_group_ids
 
-Name
-Examples:
-customer-portal-dev-bastion
+enable_deletion_protection
 
-customer-portal-dev-app-01
-Step 7
+target_instance_ids
+Avoid hardcoding any values.
+Step 8
 Outputs
-The module should return:
+Return:
+ALB ARN
 
-Instance ID
+ALB DNS Name
 
-Private IP
+Target Group ARN
 
-Public IP
-
-Availability Zone
-
-ARN
-Remember that the Application Server won't have a public IP.
+Listener ARN
+Security Requirements
+ALB Security Group:
+Allow HTTP (80) from 0.0.0.0/0
+Outbound: All traffic
+Application Security Group:
+Allow HTTP (80) only from the ALB Security Group
+Remove any rule that allows unrestricted HTTP access.
 Constraints
-❌ Do not hardcode AMI IDs inside the module.
 ❌ Do not hardcode subnet IDs.
-❌ Do not create separate modules for Bastion and App.
-❌ Do not duplicate EC2 resource blocks.
-❌ Do not configure providers inside the module.
-❌ Do not use default values for environment-specific settings.
+❌ Do not hardcode instance IDs.
+❌ Do not create duplicate resources.
+❌ Do not place the ALB in private subnets.
+❌ Do not configure HTTPS or certificates yet.
+❌ Do not create Auto Scaling Groups yet.
 Expected Folder Structure
 terraform-enterprise-platform/
 
 modules/
 ├── vpc/
 ├── security-group/
-└── ec2/
+├── ec2/
+└── alb/
     ├── main.tf
     ├── variables.tf
     ├── outputs.tf
@@ -164,49 +152,47 @@ terraform fmt
 terraform validate
 
 terraform plan
-If you're using AWS, also run:
+If you have an AWS account:
 terraform apply
-Verify:
-Bastion Host has a public IP.
-Application Server has no public IP.
-Both instances are in the expected subnets.
-Tags are applied correctly.
+Then verify:
+ALB is deployed in both public subnets.
+Health checks pass.
+The ALB DNS name serves your application (or at least reaches the target if a web server is running).
+The application instance is not directly exposed to the internet.
 Deliverables
 Submit:
 Updated folder structure.
-Every new and modified .tf file.
+All new and modified .tf files.
 Output of:
 terraform fmt
 terraform validate
 terraform plan
 If applied:
-EC2 Instance IDs
-Public/Private IPs
-AWS console screenshot (optional)
-Concepts You'll Learn Today
-After completing this challenge, you'll understand:
-How to design a reusable EC2 module.
-Why infrastructure should be composed by instantiating modules, not copying resources.
-The difference between Bastion Hosts and private application servers.
-How networking decisions affect EC2 accessibility.
+ALB DNS Name
+Target Group status
+Listener details
+Health check status
+Concepts You'll Learn
+After completing today's challenge, you'll understand:
+How an Application Load Balancer routes traffic.
+The relationship between ALBs, Listeners, and Target Groups.
+Why application instances should remain private.
+How to build another reusable Terraform module that integrates with your existing infrastructure.
 Senior Code Review Focus
-When you submit your code, I'll review it like a real pull request and evaluate:
-Module reusability
-Variable naming
-Output quality
+I'll review your submission for:
+Module design and reusability
+Correct ALB architecture
+Security Group implementation
+Variable and output quality
+Dependency handling
+Naming and tagging standards
+Production-readiness
 Terraform best practices
-AWS networking correctness
-Code organization
-Production readiness
-Interview readiness
-Bootcamp Progress
+Progress Tracker
 ✅ Day 1: Reusable VPC Module
-✅ Day 2: Public & Private Subnets (for_each)
+✅ Day 2: Public & Private Subnets
 ✅ Day 3: Internet Gateway + NAT Gateway + Route Tables
 ✅ Day 4: Reusable Security Group Module
-✅ Day 5: Reusable EC2 Module (Bastion + Private Application Server)
-By the end of Level 1, you'll have built a complete, modular AWS foundation that we can confidently extend into ALBs, Auto Scaling, RDS, HCP Terraform, Kubernetes, and eventually the senior-level platform engineering scenarios you're aiming for.
-
-Daily Terraform Interview Challenge
-I won't use this old prompt because we've intentionally replaced it with your new learning plan.
-Your saved preference is to progress from Level 1 to Level 10 through one continuous enterprise Terraform project. So instead of a 6+ years challenge today, here's the next challenge in your bootcamp.
+✅ Day 5: Reusable EC2 Module (Bastion + App Server)
+✅ Day 6: Reusable ALB Module + Target Group (Today)
+This continues building your enterprise Terraform repository one production-grade component at a time, preparing you for higher levels where we'll introduce Auto Scaling, RDS, HCP Terraform, CI/CD, Kubernetes, policy as code, and multi-cloud architectures.
