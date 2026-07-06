@@ -46,6 +46,7 @@ module "bastion_server" {
   project_name         = var.proj_name
   environment          = var.env
   key_name             = var.key_name
+  iam_instance_profile = module.iam.instance_profile_name
 }
 
 /*
@@ -82,10 +83,81 @@ module "asg" {
   ami_id               = var.ami_id
   instance_type        = var.instance_type
   security_group_ids   = [module.application_sg.id]
-  key_name             = var.key_name
+  //key_name             = var.key_name
   environment          = var.env
   instance_name        = var.asg_instance_name
   subnet_ids            = module.vpc.private_subnet_ids
   alb_target_group_arn = module.alb.target_group_arn
   lt_name_prefix       = "${var.proj_name}-${var.env}-lt"
+  iam_instance_profile_name = module.iam.instance_profile_name
+}
+
+data "aws_iam_policy_document" "assume_role" {
+
+  statement {
+    effect = "Allow"
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+data "aws_caller_identity" "this" {}
+data "aws_region" "this" {
+  
+}
+
+data "aws_iam_policy_document" "custom" {
+  statement {
+    sid = "CloudWatchLogs"
+    actions = [
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ]
+    resources = [
+      "arn:aws:logs:${data.aws_region.this.region}:${data.aws_caller_identity.this.account_id}:log-group:/aws/ec2/${var.proj_name}:*"
+    ]
+  }
+
+  statement {
+    sid = "SSMParameterStore"
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters"
+    ]
+    resources = [
+      "arn:aws:ssm:${data.aws_region.this.region}:${data.aws_caller_identity.this.account_id}:parameter/${var.proj_name}/*"
+    ]
+  }
+
+  statement {
+    sid = "S3Read"
+    actions = [
+      "s3:GetObject"
+    ]
+    resources = [
+      "arn:aws:s3:::${var.bucket_name}/*"
+    ]
+  }
+}
+
+module "iam" {
+  source = "../../modules/iam"
+
+  proj_name = var.proj_name
+  env = var.env
+  policy = data.aws_iam_policy_document.custom.json
+  policy_name = var.policy_name
+  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+}
+
+module "s3" {
+  source = "../../modules/s3"
+
+  project_name = var.proj_name
+  environment = var.env
+  bucket_name = var.backend_bucket_name
 }

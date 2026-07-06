@@ -150,3 +150,18 @@ variable "asg_instance_name" {
   description = "The name for the EC2 instances in the Auto Scaling Group"
   type        = string
 }
+
+variable "bucket_name" {
+  description = "The name of the S3 bucket"
+  type        = string
+}
+
+variable "policy_name" {
+  description = "policy name"
+  type = string
+}
+
+variable "backend_bucket_name" {
+    description = "backend s3 bucket name"
+    type = string
+}

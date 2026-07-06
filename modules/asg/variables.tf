@@ -13,10 +13,12 @@ variable "security_group_ids" {
   type        = list(string)
 }
 
+/*
 variable "key_name" {
   description = "The key pair name for the EC2 instance."
   type        = string
 }
+*/
 
 variable "environment" {
   description = "The environment (e.g., dev, prod)."
@@ -41,4 +43,9 @@ variable "alb_target_group_arn" {
 variable "instance_name" {
   description = "The name for the EC2 instances in the Auto Scaling Group."
   type        = string
+}
+
+variable "iam_instance_profile_name" {
+  description = "instance profile name"
+  type = string
 }
