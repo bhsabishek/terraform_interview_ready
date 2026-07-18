@@ -10,12 +10,12 @@ variable "env" {
 
 variable "policy_name" {
   description = "Policy name"
-  type = string
+  type        = string
 }
 
 variable "assume_role_policy" {
   description = "Assume Role Policy"
-  type = string
+  type        = string
 }
 
 variable "policy" {

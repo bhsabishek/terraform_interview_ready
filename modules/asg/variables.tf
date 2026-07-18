@@ -47,5 +47,5 @@ variable "instance_name" {
 
 variable "iam_instance_profile_name" {
   description = "instance profile name"
-  type = string
+  type        = string
 }

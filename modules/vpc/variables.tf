@@ -15,15 +15,15 @@ variable "proj_name" {
 
 variable "azs" {
   description = "List of AZS"
-  type = list(string)
+  type        = list(string)
 }
 
 variable "public_subnets" {
   description = "list of public subnets"
-  type = list(string)
+  type        = list(string)
 }
 
 variable "private_subnets" {
   description = "list of private subnets"
-  type = list(string)
+  type        = list(string)
 }

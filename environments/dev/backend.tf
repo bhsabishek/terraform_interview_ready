@@ -1,4 +1,4 @@
-terraform {
+/*terraform {
   backend "s3" {
     bucket       = "s3-managed-terraform-tffile"
     key          = "terraform.tfstate"  
@@ -6,4 +6,4 @@ terraform {
     encrypt      = true  
     use_lockfile = true 
   }
-}
+}*/

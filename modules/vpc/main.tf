@@ -60,9 +60,9 @@ resource "aws_internet_gateway" "my_igw" {
 }
 
 resource "aws_route" "my_r" {
-  route_table_id = aws_route_table.my_rt.id
+  route_table_id         = aws_route_table.my_rt.id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id = aws_internet_gateway.my_igw.id
+  gateway_id             = aws_internet_gateway.my_igw.id
 }
 
 resource "aws_route_table" "my_rt" {
@@ -79,12 +79,12 @@ resource "aws_route_table" "my_rt" {
 resource "aws_route_table_association" "my_rt_public_a" {
   for_each = aws_subnet.public_subnet
 
-  subnet_id = each.value.id
+  subnet_id      = each.value.id
   route_table_id = aws_route_table.my_rt.id
 }
 
 resource "aws_eip" "my_eip" {
-  domain   = "vpc"
+  domain = "vpc"
 
   tags = {
     Project     = var.proj_name
@@ -111,9 +111,9 @@ resource "aws_nat_gateway" "my_nat_gw" {
 }
 
 resource "aws_route" "my_nat_r" {
-  route_table_id = aws_route_table.my_nat_rt.id
+  route_table_id         = aws_route_table.my_nat_rt.id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id = aws_nat_gateway.my_nat_gw.id
+  nat_gateway_id         = aws_nat_gateway.my_nat_gw.id
 }
 
 resource "aws_route_table" "my_nat_rt" {
@@ -130,6 +130,6 @@ resource "aws_route_table" "my_nat_rt" {
 resource "aws_route_table_association" "my_rt_private_a" {
   for_each = aws_subnet.private_subnet
 
-  subnet_id = each.value.id
+  subnet_id      = each.value.id
   route_table_id = aws_route_table.my_nat_rt.id
 }

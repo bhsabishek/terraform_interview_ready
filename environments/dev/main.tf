@@ -1,22 +1,22 @@
 module "vpc" {
   source = "../../modules/vpc"
 
-  proj_name  = var.proj_name
-  cidr_block = var.cidr_block
-  env        = var.env
-  azs        = var.azs
-  public_subnets = var.public_subnets
+  proj_name       = var.proj_name
+  cidr_block      = var.cidr_block
+  env             = var.env
+  azs             = var.azs
+  public_subnets  = var.public_subnets
   private_subnets = var.private_subnets
 }
 
 module "bastion_sg" {
   source = "../../modules/security-group"
 
-  project_name = var.proj_name
-  environment  = var.env
-  vpc_id       = module.vpc.vpc_id
-  name         = var.bastion_sg_name
-  description  = var.bastion_sg_description
+  project_name  = var.proj_name
+  environment   = var.env
+  vpc_id        = module.vpc.vpc_id
+  name          = var.bastion_sg_name
+  description   = var.bastion_sg_description
   ingress_rules = var.bastion_sg_ingress_rules
   egress_rules  = var.bastion_sg_egress_rules
 }
@@ -24,13 +24,30 @@ module "bastion_sg" {
 module "application_sg" {
   source = "../../modules/security-group"
 
+  project_name  = var.proj_name
+  environment   = var.env
+  vpc_id        = module.vpc.vpc_id
+  name          = var.application_sg_name
+  description   = var.application_sg_description
+  ingress_rules = var.application_sg_ingress_rules
+  egress_rules  = var.application_sg_egress_rules
+}
+
+module "rds_sg" {
+  source = "../../modules/security-group"
+
   project_name = var.proj_name
   environment  = var.env
   vpc_id       = module.vpc.vpc_id
-  name         = var.application_sg_name
-  description  = var.application_sg_description
-  ingress_rules = var.application_sg_ingress_rules
-  egress_rules  = var.application_sg_egress_rules
+  name         = var.rds_sg_name
+  description  = var.rds_sg_description
+  ingress_rules = [
+    for rule in var.rds_sg_ingress_rules : merge(rule, {
+      cidr_blocks     = null
+      security_groups = [module.application_sg.id]
+    })
+  ]
+  egress_rules = var.rds_sg_egress_rules
 }
 
 
@@ -68,38 +85,38 @@ module "application_server" {
 module "alb" {
   source = "../../modules/alb"
 
-  name                     = var.alb_name
-  internal                 = var.alb_internal
-  security_groups          = [module.application_sg.id]
-  subnets                  = module.vpc.public_subnet_ids
+  name                       = var.alb_name
+  internal                   = var.alb_internal
+  security_groups            = [module.application_sg.id]
+  subnets                    = module.vpc.public_subnet_ids
   enable_deletion_protection = var.alb_enable_deletion_protection
-  vpc_id                   = module.vpc.vpc_id
+  vpc_id                     = module.vpc.vpc_id
   //target_id                = module.asg.target_group_arn
 }
 
 module "asg" {
   source = "../../modules/asg"
 
-  ami_id               = var.ami_id
-  instance_type        = var.instance_type
-  security_group_ids   = [module.application_sg.id]
+  ami_id             = var.ami_id
+  instance_type      = var.instance_type
+  security_group_ids = [module.application_sg.id]
   //key_name             = var.key_name
-  environment          = var.env
-  instance_name        = var.asg_instance_name
-  subnet_ids            = module.vpc.private_subnet_ids
-  alb_target_group_arn = module.alb.target_group_arn
-  lt_name_prefix       = "${var.proj_name}-${var.env}-lt"
+  environment               = var.env
+  instance_name             = var.asg_instance_name
+  subnet_ids                = module.vpc.private_subnet_ids
+  alb_target_group_arn      = module.alb.target_group_arn
+  lt_name_prefix            = "${var.proj_name}-${var.env}-lt"
   iam_instance_profile_name = module.iam.instance_profile_name
 }
 
 data "aws_iam_policy_document" "assume_role" {
 
   statement {
-    effect = "Allow"
+    effect  = "Allow"
     actions = ["sts:AssumeRole"]
 
     principals {
-      type = "Service"
+      type        = "Service"
       identifiers = ["ec2.amazonaws.com"]
     }
   }
@@ -107,7 +124,7 @@ data "aws_iam_policy_document" "assume_role" {
 
 data "aws_caller_identity" "this" {}
 data "aws_region" "this" {
-  
+
 }
 
 data "aws_iam_policy_document" "custom" {
@@ -147,10 +164,10 @@ data "aws_iam_policy_document" "custom" {
 module "iam" {
   source = "../../modules/iam"
 
-  proj_name = var.proj_name
-  env = var.env
-  policy = data.aws_iam_policy_document.custom.json
-  policy_name = var.policy_name
+  proj_name          = var.proj_name
+  env                = var.env
+  policy             = data.aws_iam_policy_document.custom.json
+  policy_name        = var.policy_name
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
@@ -158,6 +175,26 @@ module "s3" {
   source = "../../modules/s3"
 
   project_name = var.proj_name
-  environment = var.env
-  bucket_name = var.backend_bucket_name
+  environment  = var.env
+  bucket_name  = var.backend_bucket_name
+}
+
+module "rds" {
+  source = "../../modules/rds"
+
+  db_name             = var.db_name
+  engine              = var.engine
+  instance_class      = var.instance_class
+  storage_type        = var.storage_type
+  allocated_storage   = var.allocated_storage
+  multi_az            = var.multi_az
+  publicly_accessible = var.publicly_accessible
+  deletion_protection = var.deletion_protection
+  db_username         = var.db_username
+  db_password         = var.db_password
+  private_subnet_ids  = module.vpc.private_subnet_ids
+  project_name        = var.proj_name
+  environment         = var.env
+  skip_final_snapshot = var.skip_final_snapshot
+  security_group_ids  = [module.rds_sg.id]
 }

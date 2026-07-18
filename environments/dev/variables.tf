@@ -15,17 +15,17 @@ variable "proj_name" {
 
 variable "azs" {
   description = "List of AZS"
-  type = list(string)
+  type        = list(string)
 }
 
 variable "public_subnets" {
   description = "list of public subnets"
-  type = list(string)
+  type        = list(string)
 }
 
 variable "private_subnets" {
   description = "list of private subnets"
-  type = list(string)
+  type        = list(string)
 }
 
 variable "bastion_sg_name" {
@@ -40,7 +40,7 @@ variable "bastion_sg_description" {
 
 variable "bastion_sg_ingress_rules" {
   description = "The ingress rules for the security group"
-  type        = list(object({
+  type = list(object({
     description = string
     from_port   = number
     to_port     = number
@@ -51,7 +51,7 @@ variable "bastion_sg_ingress_rules" {
 
 variable "bastion_sg_egress_rules" {
   description = "The egress rules for the security group"
-  type        = list(object({
+  type = list(object({
     description = string
     from_port   = number
     to_port     = number
@@ -72,7 +72,7 @@ variable "application_sg_description" {
 
 variable "application_sg_ingress_rules" {
   description = "The ingress rules for the security group"
-  type        = list(object({
+  type = list(object({
     description = string
     from_port   = number
     to_port     = number
@@ -83,7 +83,39 @@ variable "application_sg_ingress_rules" {
 
 variable "application_sg_egress_rules" {
   description = "The egress rules for the security group"
-  type        = list(object({
+  type = list(object({
+    description = string
+    from_port   = number
+    to_port     = number
+    protocol    = string
+    cidr_blocks = list(string)
+  }))
+}
+
+variable "rds_sg_name" {
+  description = "Name of the RDS"
+  type        = string
+}
+
+variable "rds_sg_description" {
+  description = "Description of the Security Group"
+  type        = string
+}
+
+variable "rds_sg_ingress_rules" {
+  description = "The ingress rules for the security group"
+  type = list(object({
+    description = string
+    from_port   = number
+    to_port     = number
+    protocol    = string
+    cidr_blocks = optional(list(string))
+  }))
+}
+
+variable "rds_sg_egress_rules" {
+  description = "The egress rules for the security group"
+  type = list(object({
     description = string
     from_port   = number
     to_port     = number
@@ -158,10 +190,55 @@ variable "bucket_name" {
 
 variable "policy_name" {
   description = "policy name"
-  type = string
+  type        = string
 }
 
 variable "backend_bucket_name" {
-    description = "backend s3 bucket name"
-    type = string
+  description = "backend s3 bucket name"
+  type        = string
+}
+
+variable "db_name" {
+  type = string
+}
+
+variable "db_username" {
+  type = string
+}
+
+variable "db_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "engine" {
+  type = string
+}
+
+variable "instance_class" {
+  type = string
+}
+
+variable "storage_type" {
+  type = string
+}
+
+variable "allocated_storage" {
+  type = number
+}
+
+variable "multi_az" {
+  type = bool
+}
+
+variable "publicly_accessible" {
+  type = bool
+}
+
+variable "deletion_protection" {
+  type = bool
+}
+
+variable "skip_final_snapshot" {
+  type = bool
 }
